@@ -1,4 +1,4 @@
-from mentalitystorm import OneShotEasyRunner, Config, BceKldLoss
+from mentalitystorm import OneShotEasyTrainer, config, BceKldLoss, MseKldLoss
 from pathlib import Path
 import torchvision
 import torchvision.transforms as TVT
@@ -6,14 +6,14 @@ import models
 
 if __name__ == '__main__':
 
-    datadir = Path(Config().DATA_PATH) / 'spaceinvaders/images/raw'
     dataset = torchvision.datasets.ImageFolder(
-        root=datadir.absolute(),
+        root=config.datapath('spaceinvaders/images/raw'),
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
     convolutions = models.ConvVAE4Fixed((210, 160))
 
-    loss = BceKldLoss()
-    easy = OneShotEasyRunner()
-    easy.run(convolutions, dataset, batch_size=128, epochs=20, lossfunc=loss)
+    #loss = BceKldLoss()
+    loss = MseKldLoss()
+    easy = OneShotEasyTrainer()
+    easy.run(convolutions, dataset, batch_size=50, epochs=20, lossfunc=loss)

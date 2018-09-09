@@ -13,7 +13,7 @@ class ConvVAE4Fixed(Storeable, BaseVAE):
         encoder = self.Encoder(input_shape, first_kernel, first_stride, second_kernel, second_stride)
         decoder = self.Decoder(encoder.z_shape, first_kernel, first_stride, second_kernel, second_stride)
         BaseVAE.__init__(self, encoder, decoder, variational)
-        Storeable.__init__(self, input_shape, first_kernel, first_stride, second_kernel, second_stride)
+        Storeable.__init__(self)
 
 
     class Encoder(nn.Module):
