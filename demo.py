@@ -9,7 +9,8 @@ if __name__ == '__main__':
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    convolutions = Storeable.load('K3Q3OLTBM2K0NI0S')
+    convolutions = Storeable.load('WHR8K60HZMVFENSG')
 
     demo = Demo()
+    demo.sample(convolutions, 32, samples=20)
     demo.demo(convolutions, dataset)
