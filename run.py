@@ -6,11 +6,11 @@ import models
 if __name__ == '__main__':
 
     dataset = torchvision.datasets.ImageFolder(
-        root=config.datapath('spaceinvaders/images/dev'),
+        root=config.datapath('spaceinvaders/images/raw'),
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    convolutions = models.ConvVAE4Fixed((210, 160))
+    convolutions = models.ConvVAE4Fixed((210, 160), 16)
 
     convolutions.registerView('z_corr', OpenCV('z_corr', (512, 512)))
 
