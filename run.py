@@ -106,6 +106,7 @@ if __name__ == '__main__':
         trainer.register_after_hook(tb_image)
         tester.register_after_hook(tb_test_loss)
         tester.register_after_hook(tb_image)
+        run.tb.add_graph(model, (data_package.dataset[0][0].cpu().unsqueeze(0),))
 
         for epoch in tqdm(run.for_epochs(20), 'epochs', 20):
 
