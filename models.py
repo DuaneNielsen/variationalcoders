@@ -57,10 +57,10 @@ class ConvVAE4Fixed(Storeable, BaseVAE):
             self.d_conv1 = nn.ConvTranspose2d(z_size, 128, kernel_size=z_shape, stride=1)
             self.d_bn1 = nn.BatchNorm2d(128)
 
-            self.d_conv2 = nn.ConvTranspose2d(128, 128, kernel_size=second_kernel, stride=second_stride, output_padding=(1,0))
+            self.d_conv2 = nn.ConvTranspose2d(128, 128, kernel_size=second_kernel, stride=second_stride)# , output_padding=(1,0))
             self.d_bn2 = nn.BatchNorm2d(128)
 
-            self.d_conv3 = nn.ConvTranspose2d(128, 32, kernel_size=second_kernel, stride=second_stride, output_padding=(0,1))
+            self.d_conv3 = nn.ConvTranspose2d(128, 32, kernel_size=second_kernel, stride=second_stride, output_padding=1) #, output_padding=(0,1))
             self.d_bn3 = nn.BatchNorm2d(32)
 
             self.d_conv4 = nn.ConvTranspose2d(32, 3, kernel_size=first_kernel, stride=first_stride, output_padding=1)
