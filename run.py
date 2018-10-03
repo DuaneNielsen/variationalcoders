@@ -106,10 +106,10 @@ if __name__ == '__main__':
     )
 
     import transforms
-    co_ord_conv_invaders = GymImageDataset(directory=r'C:\data\SpaceInvaders-v4\images\raw_v1\all',
+    co_ord_conv_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
                                            transform=TVT.Compose([TVT.ToTensor(), transforms.CoordConv()]))
 
-    regular_invaders = GymImageDataset(directory=r'C:\data\SpaceInvaders-v4\images\raw_v1\all',
+    regular_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
                                        transform=TVT.Compose([TVT.ToTensor()]))
 
     co_ord_conv_data_package = DataPackage(co_ord_conv_invaders, AutoEncodeSelect())
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     #run_fac = SimpleRunFac.resume(r'C:\data\runs\431', data_package)
 
     batch_size = 60
-    epochs = 20
+    epochs = 40
 
     for model, opt, loss_fn, data_package, trainer, tester, run in run_fac:
         dev, train, test, selector = data_package.loaders(batch_size=batch_size)
