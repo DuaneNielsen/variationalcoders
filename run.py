@@ -1,5 +1,5 @@
 from mentalitystorm import config, MseKldLoss, OpenCV, DataPackage, Selector, Run, RunFac, SimpleTrainer, SimpleTester,\
-    SimpleRunFac, Params, Handles, LoadModel
+    SimpleRunFac, Params, Handles, LoadModel, BceKldLoss
 import torchvision
 import torch
 import torchvision.transforms as TVT
@@ -16,6 +16,18 @@ class AutoEncodeSelect(Selector):
 
     def get_target(self, package, device):
         return package[0].to(device),
+
+
+class StandardSelect(Selector):
+    def __init__(self, source_index=0, target_index=1):
+        self.source_index = source_index
+        self.target_index = target_index
+
+    def get_input(self, package, device):
+        return package[self.source_index].to(device),
+
+    def get_target(self, package, device):
+        return package[self.target_index].to(device),
 
 
 def print_loss_term(key, value):
@@ -60,19 +72,25 @@ def write_correlation(epoch):
     epoch.run.tb.add_image('corr_matrix', corr, run.step)
 
 
-def write_histogram(epoch):
-    z = np.concatenate(epoch.context['zl'], axis=0).squeeze()
-    histograms = np.rollaxis(z, 1)
-    for i, histogram in enumerate(histograms):
-        epoch.run.tb.add_histogram('latentvar' + str(i), histogram, epoch.run.step)
-
-
 def register_tb(data_package):
     trainer.register_after_hook(tb_train_loss)
     trainer.register_after_hook(tb_image)
     tester.register_after_hook(tb_test_loss)
     tester.register_after_hook(tb_image)
     run.tb.add_graph(model, (data_package.dataset[0][0].cpu().unsqueeze(0),))
+
+
+def store_latent_vars_in_epoch(model, input, output):
+    if 'zl' not in model.run.epoch.context:
+        model.run.epoch.context['zl'] = []
+    model.run.epoch.context['zl'].append(output[0].data.cpu().numpy())
+
+
+def write_histogram(epoch):
+    z = np.concatenate(epoch.context['zl'], axis=0).squeeze()
+    histograms = np.rollaxis(z, 1)
+    for i, histogram in enumerate(histograms):
+        epoch.run.tb.add_histogram('latentvar' + str(i), histogram, epoch.run.step)
 
 
 if __name__ == '__main__':
@@ -85,12 +103,6 @@ if __name__ == '__main__':
     def view_image(model, input, output):
         input_viewer.update(input[0][0, 0:3].data)
         output_viewer.update(output[0][0, 0:3].data)
-
-
-    def store_latent_vars_in_epoch(model, input, output):
-        if 'zl' not in model.run.epoch.context:
-            model.run.epoch.context['zl'] = []
-        model.run.epoch.context['zl'].append(output[0].data.cpu().numpy())
 
     invaders = torchvision.datasets.ImageFolder(
         root=config.datapath('spaceinvaders/images/raw'),
@@ -106,13 +118,23 @@ if __name__ == '__main__':
     )
 
     import transforms
+
     co_ord_conv_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
-                                           transform=TVT.Compose([TVT.ToTensor(), transforms.CoordConv()]))
+                                           input_transform=TVT.Compose([TVT.ToTensor(), transforms.CoordConv()]),
+                                           target_transform=TVT.Compose([TVT.ToTensor()]))
+
+    co_ord_conv_invaders_w_target = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
+                                                    input_transform=TVT.Compose(
+                                                        [TVT.ToTensor(), transforms.CoordConv()]),
+                                                    target_transform=TVT.Compose(
+                                                        [TVT.ToTensor(), transforms.CoordConv()]))
 
     regular_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
-                                       transform=TVT.Compose([TVT.ToTensor()]))
+                                       input_transform=TVT.Compose([TVT.ToTensor()]),
+                                       target_transform=TVT.Compose([TVT.ToTensor()]))
 
-    co_ord_conv_data_package = DataPackage(co_ord_conv_invaders, AutoEncodeSelect())
+    co_ord_conv_data_package_w_target = DataPackage(co_ord_conv_invaders_w_target, StandardSelect())
+    co_ord_conv_data_package = DataPackage(co_ord_conv_invaders, StandardSelect())
     control_data_package = DataPackage(regular_invaders, AutoEncodeSelect())
 
     run_fac = SimpleRunFac()
@@ -122,16 +144,17 @@ if __name__ == '__main__':
     #model = Params(ConvVAE4Fixed, (400, 600), 2)
 
     opt = Params(Adam, lr=1e-3)
-
-    run_fac.run_list.append(Run(model, opt, Params(MseKldLoss), control_data_package, run_name='control'))
-    run_fac.run_list.append(Run(model3, opt, Params(MseKldLoss, transform=transforms.SelectChannels()), co_ord_conv_data_package, run_name='regular output'))
-    run_fac.run_list.append(Run(model5, opt, Params(MseKldLoss), co_ord_conv_data_package, run_name='co-ord conv channel output'))
+    run_fac.run_list.append(Run(model, opt, Params(BceKldLoss), control_data_package, run_name='control BCE'))
+    run_fac.run_list.append(Run(model, opt, Params(MseKldLoss), control_data_package, run_name='control MSE'))
+    run_fac.run_list.append(Run(model3, opt, Params(BceKldLoss), co_ord_conv_data_package, run_name='co-ord conv BCE'))
+    run_fac.run_list.append(Run(model3, opt, Params(MseKldLoss), co_ord_conv_data_package, run_name='co-ord conv MSE'))
+    #run_fac.run_list.append(Run(model5, opt, Params(MseKldLoss), co_ord_conv_data_package_w_target, run_name='co-ord conv channel output'))
     #run_fac.run_list.append(Run(model, opt, Params(MseKldLoss, beta=8.0), data_package, run_name='B-VAE loss 8.0'))
 
     #run_fac = SimpleRunFac.resume(r'C:\data\runs\431', data_package)
 
-    batch_size = 60
-    epochs = 40
+    batch_size = 80
+    epochs = 20
 
     for model, opt, loss_fn, data_package, trainer, tester, run in run_fac:
         dev, train, test, selector = data_package.loaders(batch_size=batch_size)
