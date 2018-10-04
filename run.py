@@ -1,6 +1,6 @@
 from instrumentation import tb_test_loss_term, register_tb, write_histogram, LatentInstrument
 from mentalitystorm.data import AutoEncodeSelect, StandardSelect
-from mentalitystorm import config, MseKldLoss, OpenCV, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss
+from mentalitystorm import config, MseKldLoss, ImageViewer, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss
 import torchvision
 import torchvision.transforms as TVT
 from models import ConvVAE4Fixed
@@ -13,13 +13,8 @@ import numpy as np
 
 if __name__ == '__main__':
 
-    input_viewer = OpenCV('input', (320, 480))
-    output_viewer = OpenCV('output', (320, 480))
-
-    def view_image(model, input, output):
-        input_viewer.update(input[0][0, 0:3].data)
-        output_viewer.update(output[0][0, 0:3].data)
-
+    input_viewer = ImageViewer('input', (320, 480))
+    output_viewer = ImageViewer('output', (320, 480))
     latent_instr = LatentInstrument()
 
     invaders = torchvision.datasets.ImageFolder(
@@ -77,7 +72,8 @@ if __name__ == '__main__':
     for model, opt, loss_fn, data_package, trainer, tester, run in run_fac:
         dev, train, test, selector = data_package.loaders(batch_size=batch_size)
 
-        model.register_forward_hook(view_image)
+        model.register_forward_hook(input_viewer.view_input)
+        model.register_forward_hook(input_viewer.view_output)
         register_tb(run)
 
         for epoch in tqdm(run.for_epochs(epochs), 'epochs', epochs):
