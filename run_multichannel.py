@@ -10,6 +10,7 @@ from torch.optim import Adam
 from mentalitystorm.atari import GymImageDataset
 from mentalitystorm.basemodels import MultiChannelAE, DummyAE
 import transforms as tf
+from mentalitystorm.train import SimpleInference
 
 if __name__ == '__main__':
 
@@ -35,7 +36,8 @@ if __name__ == '__main__':
     opt = Params(Adam, lr=1e-3)
 
     run_fac = SimpleRunFac()
-    run_fac.run_list.append(Run(channel_coder, None, Params(MSELoss), co_ord_conv_data_package, run_name='shots_v1'))
+    run_fac.run_list.append(Run(channel_coder, None, None, co_ord_conv_data_package,
+                                run_name='shots_v1', trainer=SimpleInference()))
 
     #run_fac = SimpleRunFac.resume(r'C:\data\runs\549', co_ord_conv_data_package)
     batch_size = 64
@@ -45,6 +47,7 @@ if __name__ == '__main__':
         dev, train, test, selector = data_package.loaders(batch_size=batch_size)
 
         model.add_ae(DummyAE(), [0, 1, 2, 3])
+        model.add_ae(DummyAE(), [0, 2, 3])
 
         model.register_forward_hook(input_viewer.view_input)
         model.register_forward_hook(output_viewer.view_output)
@@ -52,12 +55,8 @@ if __name__ == '__main__':
 
         for epoch in tqdm(run.for_epochs(epochs), 'epochs', epochs):
 
-            #epoch.register_after_hook(write_histogram)
             epoch.execute_before(epoch)
+            trainer.infer(model, loss_fn, test, selector, run, epoch)
 
-            handles = Handles()
-            handles += loss_fn.register_hook(tb_test_loss_term)
-            tester.test(model, loss_fn, test, selector, run, epoch)
-            handles.remove()
             epoch.execute_after(epoch)
             run.save()
