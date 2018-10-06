@@ -1,12 +1,9 @@
 from mentalitystorm.instrumentation import tb_test_loss_term, register_tb, write_histogram, LatentInstrument
 from mentalitystorm.data import AutoEncodeSelect, StandardSelect
 from mentalitystorm import config, MseKldLoss, ImageViewer, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss
-from mentalitystorm.losses import MSELoss
 import torchvision
 import torchvision.transforms as TVT
-from models import ConvVAE4Fixed, AtariVAE2DLatent, Compressor
 from tqdm import tqdm
-from torch.optim import Adam
 from mentalitystorm.atari import GymImageDataset
 
 if __name__ == '__main__':
@@ -39,7 +36,7 @@ if __name__ == '__main__':
                                                     input_transform=TVT.Compose(
                                                         [TVT.ToTensor(), transforms.CoordConv()]),
                                                     target_transform=TVT.Compose(
-                                                        [TVT.ToTensor(), transforms.CoordConv()]))
+                                                        [TVT.ToTensor()]))
 
     regular_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
                                        input_transform=TVT.Compose([TVT.ToTensor()]),
@@ -48,16 +45,8 @@ if __name__ == '__main__':
     co_ord_conv_data_package = DataPackage(co_ord_conv_invaders, StandardSelect())
     control_data_package = DataPackage(regular_invaders, AutoEncodeSelect())
 
-    run_fac = SimpleRunFac()
-    #model = Params(AtariVAE2DLatent, (210, 160), 32, input_channels=5, output_channels=3)
-    compressor = Params(Compressor, (210, 160), 32, input_channels=5, output_channels=3)
-    #model = Params(ConvVAE4Fixed, (400, 600), 2)
-
-    opt = Params(Adam, lr=1e-3)
-    #run_fac.run_list.append(Run(model, opt, Params(BceKldLoss), control_data_package, run_name='control BCE'))
-    run_fac.run_list.append(Run(compressor, opt, Params(MSELoss), co_ord_conv_data_package, run_name='biglatent MSE with co-conv'))
-
     #run_fac = SimpleRunFac.resume(r'C:\data\runs\489', co_ord_conv_data_package)
+    run_fac = SimpleRunFac.resume(r'C:\data\runs\536', co_ord_conv_data_package)
 
     batch_size = 64
     epochs = 100
@@ -82,4 +71,3 @@ if __name__ == '__main__':
             tester.test(model, loss_fn, test, selector, run, epoch)
             handles.remove()
             epoch.execute_after(epoch)
-            run.save()

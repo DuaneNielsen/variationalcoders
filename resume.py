@@ -35,11 +35,10 @@ if __name__ == '__main__':
                                            input_transform=TVT.Compose([TVT.ToTensor(), transforms.CoordConv()]),
                                            target_transform=TVT.Compose([TVT.ToTensor()]))
 
-    co_ord_conv_invaders_w_target = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
-                                                    input_transform=TVT.Compose(
-                                                        [TVT.ToTensor(), transforms.CoordConv()]),
-                                                    target_transform=TVT.Compose(
-                                                        [TVT.ToTensor(), transforms.CoordConv()]))
+    co_ord_conv_shots = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
+                                           input_transform=TVT.Compose([shots, TVT.ToTensor(), transforms.CoordConv()]),
+                                           target_transform=TVT.Compose([shots, TVT.ToTensor()]))
+
 
     regular_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
                                        input_transform=TVT.Compose([TVT.ToTensor()]),
@@ -48,16 +47,7 @@ if __name__ == '__main__':
     co_ord_conv_data_package = DataPackage(co_ord_conv_invaders, StandardSelect())
     control_data_package = DataPackage(regular_invaders, AutoEncodeSelect())
 
-    run_fac = SimpleRunFac()
-    #model = Params(AtariVAE2DLatent, (210, 160), 32, input_channels=5, output_channels=3)
-    compressor = Params(Compressor, (210, 160), 32, input_channels=5, output_channels=3)
-    #model = Params(ConvVAE4Fixed, (400, 600), 2)
-
-    opt = Params(Adam, lr=1e-3)
-    #run_fac.run_list.append(Run(model, opt, Params(BceKldLoss), control_data_package, run_name='control BCE'))
-    run_fac.run_list.append(Run(compressor, opt, Params(MSELoss), co_ord_conv_data_package, run_name='biglatent MSE with co-conv'))
-
-    #run_fac = SimpleRunFac.resume(r'C:\data\runs\489', co_ord_conv_data_package)
+    run_fac = SimpleRunFac.resume(r'C:\data\runs\489', co_ord_conv_data_package)
 
     batch_size = 64
     epochs = 100

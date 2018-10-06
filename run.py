@@ -7,6 +7,7 @@ from models import ConvVAE4Fixed
 from tqdm import tqdm
 from torch.optim import Adam
 from mentalitystorm.atari import GymImageDataset
+import transforms
 
 if __name__ == '__main__':
 
@@ -19,15 +20,14 @@ if __name__ == '__main__':
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    from transforms import SegmentByColor
-    shots = SegmentByColor(lower=[128, 128, 128], upper=[255, 255, 255])
+    from transforms import ColorMask
+    shots = ColorMask(lower=[128, 128, 128], upper=[255, 255, 255])
 
     cartpole = torchvision.datasets.ImageFolder(
         root=config.datapath('cartpole/images/raw'),
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    import transforms
 
     co_ord_conv_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
                                            input_transform=TVT.Compose([TVT.ToTensor(), transforms.CoordConv()]),
