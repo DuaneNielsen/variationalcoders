@@ -1,4 +1,4 @@
-from mentalitystorm import Storeable
+from mentalitystorm.storage import Storeable
 from mentalitystorm.basemodels import BaseVAE, BaseAE
 import torch
 import torch.nn as nn

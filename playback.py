@@ -1,15 +1,10 @@
-from mentalitystorm.instrumentation import tb_test_loss_term, register_tb, write_histogram, LatentInstrument
-from mentalitystorm.data import AutoEncodeSelect, StandardSelect
-from mentalitystorm import config, MseKldLoss, ImageViewer, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss
-from mentalitystorm.losses import MSELoss
-import torchvision
+from mentalitystorm.instrumentation import register_tb, LatentInstrument
+from mentalitystorm.data import StandardSelect, GymImageDataset
+from mentalitystorm import config, ImageViewer, DataPackage, Run, SimpleRunFac, Params, transforms as tf
 import torchvision.transforms as TVT
-from models import ConvVAE4Fixed, AtariVAE2DLatent, Compressor
 from tqdm import tqdm
 from torch.optim import Adam
-from mentalitystorm.atari import GymImageDataset
 from mentalitystorm.basemodels import MultiChannelAE, DummyAE
-import transforms as tf
 from mentalitystorm.train import SimpleInference
 
 if __name__ == '__main__':

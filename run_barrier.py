@@ -1,8 +1,18 @@
 from mentalitystorm.instrumentation import tb_test_loss_term, register_tb, LatentInstrument
 from mentalitystorm.data import StandardSelect, GymImageDataset
-from mentalitystorm import config, ImageViewer, DataPackage, SimpleRunFac, Handles, transforms as tf
+from mentalitystorm.config import config
+from mentalitystorm.observe import ImageViewer
+from mentalitystorm.data import DataPackage
+from mentalitystorm.runners import SimpleRunFac, Params, Run
+from mentalitystorm.util import Handles
+import mentalitystorm.transforms as tf
+from mentalitystorm.losses import MSELoss
+
+
 import torchvision.transforms as TVT
+from models import Compressor
 from tqdm import tqdm
+from torch.optim import Adam
 
 if __name__ == '__main__':
 
@@ -11,23 +21,22 @@ if __name__ == '__main__':
     latent_viewer = ImageViewer('latent', (320, 480))
     latent_instr = LatentInstrument()
 
-    player = tf.ColorMask(lower=[30, 100, 40], upper=[70, 180, 70], append=False)
-    cut = tf.SetRange(0, 60, 0, 210)
+    barrier = tf.ColorMask(lower=[120, 74, 30], upper=[190, 100, 70], append=False)
 
 
     co_ord_conv_shots = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
-                                        input_transform=TVT.Compose([player, cut, TVT.ToTensor(), tf.CoordConv()]),
-                                        target_transform=TVT.Compose([player, cut, TVT.ToTensor()]))
+                                        input_transform=TVT.Compose([barrier, TVT.ToTensor(), tf.CoordConv()]),
+                                        target_transform=TVT.Compose([barrier, TVT.ToTensor()]))
 
     co_ord_conv_data_package = DataPackage(co_ord_conv_shots, StandardSelect())
 
-    #run_fac = SimpleRunFac()
-    #compressor = Params(Compressor, (210, 160), 1, input_channels=3, output_channels=1)
+    run_fac = SimpleRunFac()
+    compressor = Params(Compressor, (210, 160), 1, input_channels=3, output_channels=1)
 
-    #opt = Params(Adam, lr=1e-3)
-    #run_fac.run_list.append(Run(compressor, opt, Params(MSELoss), co_ord_conv_data_package, run_name='player_v1'))
+    opt = Params(Adam, lr=1e-3)
+    run_fac.run_list.append(Run(compressor, opt, Params(MSELoss), co_ord_conv_data_package, run_name='barrier'))
 
-    run_fac = SimpleRunFac.reuse(r'C:\data\runs\549', co_ord_conv_data_package)
+    #run_fac = SimpleRunFac.resume(r'C:\data\runs\549', co_ord_conv_data_package)
     batch_size = 64
     epochs = 30
 
@@ -41,7 +50,6 @@ if __name__ == '__main__':
 
         for epoch in tqdm(run.for_epochs(epochs), 'epochs', epochs):
 
-            #epoch.register_after_hook(write_histogram)
             epoch.execute_before(epoch)
 
             trainer.train(model, opt, loss_fn, train, selector, run, epoch)

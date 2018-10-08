@@ -1,13 +1,9 @@
-from mentalitystorm.instrumentation import tb_test_loss_term, register_tb, write_histogram, LatentInstrument
-from mentalitystorm.data import AutoEncodeSelect, StandardSelect
-from mentalitystorm import config, MseKldLoss, ImageViewer, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss
-from mentalitystorm.losses import MSELoss
+from mentalitystorm.instrumentation import tb_test_loss_term, register_tb, LatentInstrument
+from mentalitystorm.data import AutoEncodeSelect, StandardSelect, GymImageDataset
+from mentalitystorm import config, ImageViewer, DataPackage, SimpleRunFac, Handles, transforms
 import torchvision
 import torchvision.transforms as TVT
-from models import ConvVAE4Fixed, AtariVAE2DLatent, Compressor
 from tqdm import tqdm
-from torch.optim import Adam
-from mentalitystorm.atari import GymImageDataset
 
 if __name__ == '__main__':
 
@@ -21,7 +17,7 @@ if __name__ == '__main__':
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    from transforms import ColorMask
+    from mentalitystorm.transforms import ColorMask
     shots = ColorMask(lower=[128, 128, 128], upper=[255, 255, 255])
 
     cartpole = torchvision.datasets.ImageFolder(
@@ -29,15 +25,13 @@ if __name__ == '__main__':
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    import transforms
-
     co_ord_conv_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
                                            input_transform=TVT.Compose([TVT.ToTensor(), transforms.CoordConv()]),
                                            target_transform=TVT.Compose([TVT.ToTensor()]))
 
     co_ord_conv_shots = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),
-                                           input_transform=TVT.Compose([shots, TVT.ToTensor(), transforms.CoordConv()]),
-                                           target_transform=TVT.Compose([shots, TVT.ToTensor()]))
+                                        input_transform=TVT.Compose([shots, TVT.ToTensor(), transforms.CoordConv()]),
+                                        target_transform=TVT.Compose([shots, TVT.ToTensor()]))
 
 
     regular_invaders = GymImageDataset(directory=config.datapath(r'SpaceInvaders-v4\images\raw_v1\all'),

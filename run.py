@@ -1,13 +1,12 @@
 from mentalitystorm.instrumentation import tb_test_loss_term, register_tb, write_histogram, LatentInstrument
-from mentalitystorm.data import AutoEncodeSelect, StandardSelect
-from mentalitystorm import config, MseKldLoss, ImageViewer, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss
+from mentalitystorm.data import AutoEncodeSelect, StandardSelect, GymImageDataset
+from mentalitystorm import config, MseKldLoss, ImageViewer, DataPackage, Run, SimpleRunFac, Params, Handles, BceKldLoss, \
+    transforms
 import torchvision
 import torchvision.transforms as TVT
 from models import ConvVAE4Fixed
 from tqdm import tqdm
 from torch.optim import Adam
-from mentalitystorm.atari import GymImageDataset
-import transforms
 
 if __name__ == '__main__':
 
@@ -20,7 +19,7 @@ if __name__ == '__main__':
         transform=TVT.Compose([TVT.ToTensor()])
     )
 
-    from transforms import ColorMask
+    from mentalitystorm.transforms import ColorMask
     shots = ColorMask(lower=[128, 128, 128], upper=[255, 255, 255])
 
     cartpole = torchvision.datasets.ImageFolder(
